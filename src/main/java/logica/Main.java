@@ -20,7 +20,7 @@ public class Main {
         FederacionLog log = new FederacionLog(); 
         log.escribir("--- INICIANDO SIMULACIÓN DE LA FEDERACIÓN GALÁCTICA ---");
 
-        // CREAR LAS ZONAS DE AFORO ILIMITADO (O MUY ALTO)
+        // CREAR LAS ZONAS DE AFORO ILIMITADO
         Zona centroCoordinacion = new Zona("Centro de Coordinación Federal", 1000);
         Zona hangar = new Zona("Hangar de Patrullas", 1000);
         Zona baseSaqueadores = new Zona("Base de Saqueadores", 1000);
@@ -57,6 +57,9 @@ public class Main {
         listaZonasCompleta.add(ferrum);
         listaZonasCompleta.add(drax);
         listaZonasCompleta.add(ignis);
+        listaZonasCompleta.add(depositoCristal);
+        listaZonasCompleta.add(depositoMineral);
+        listaZonasCompleta.add(depositoPlasma);
 
         // LISTAS CONCURRENTES PARA EL CONTROL GLOBAL (Corrección de SaqueadorEspacial)
         CopyOnWriteArrayList<PatrullaFederal> listaPatrullas = new CopyOnWriteArrayList<>();

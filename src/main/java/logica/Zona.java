@@ -97,15 +97,18 @@ public class Zona {
         return delegadosPresentes;
     }
 
-    // El Saqueador usa esto para coger a la primera patrulla que pille y pelear
+    // El Saqueador usa esto para coger a la primera patrulla VÁLIDA que pille y pelear
     public PatrullaFederal obtenerPatrullaDefensora() {
-        if (!patrullasPresentesList.isEmpty()) {
-            return patrullasPresentesList.get(0);
+        for (PatrullaFederal p : patrullasPresentesList) {
+            // Solo devuelve la patrulla si aún no ha sido derrotada
+            if (!p.isDerrotada()) {
+                return p;
+            }
         }
         return null;
     }
 
-    // MODIFICADO: Ahora los saqueadores hacen cola si la zona ya está bajo ataque
+    // Ahora los saqueadores hacen cola si la zona ya está bajo ataque
     public void iniciarAtaque() throws InterruptedException {
         cerrojo.lock();
         try {
@@ -159,6 +162,10 @@ public class Zona {
 
     public int getNumeroPatrullas() {
         return patrullasPresentesList.size();
+    }
+    
+    public CopyOnWriteArrayList<PatrullaFederal> getPatrullasPresentesList() {
+        return patrullasPresentesList;
     }
     
     public int getNumeroDelegadosEnCola() {

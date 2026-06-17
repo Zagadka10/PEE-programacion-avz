@@ -12,22 +12,22 @@ import javax.swing.Timer;
  * @author hecto
  */
 public class ServidorGUI extends javax.swing.JFrame {
-    
+
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(ServidorGUI.class.getName());
     private final ArrayList<Zona> zonas;
     private final Deposito[] depositos;
     private Timer timerActualizador;
-    
+
     /**
      * Creates new form ServidorGUI
      */
     public ServidorGUI(ArrayList<Zona> zonas, Deposito[] depositos) {
         this.zonas = zonas;
         this.depositos = depositos;
-        initComponents(); 
+        initComponents();
         iniciarTemporizador();
     }
-    
+
     private void iniciarTemporizador() {
         // Refresco de pantalla cada 500 milisegundos
         timerActualizador = new Timer(500, e -> actualizarPanelLocal());
@@ -43,7 +43,7 @@ public class ServidorGUI extends javax.swing.JFrame {
         }
         return null;
     }
-    
+
     private void actualizarPanelLocal() {
         try {
             // Extraemos las cantidades actuales para usarlas en varios sitios
@@ -67,7 +67,7 @@ public class ServidorGUI extends javax.swing.JFrame {
             // >>> CRISTAL (Índice 0)
             depositandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegados()));
             // Nota: Si en tu clase Deposito no tienes getNumeroDelegadosEnCola(), pon un "0" fijo aquí.
-            esperandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegadosEnCola())); 
+            esperandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegadosEnCola()));
             if (depositos[0].isBajoAtaque()) {
                 ataqueCristal.setText("● ¡ATAQUE!");
                 ataqueCristal.setForeground(java.awt.Color.RED);
@@ -118,7 +118,8 @@ public class ServidorGUI extends javax.swing.JFrame {
 
             Zona base = buscarZona("Base de Saqueadores");
             if (base != null) {
-                baseSaqueadores.setText(base.getListaIdsSaqueadores());
+                String idsComas = base.getListaIdsSaqueadores();
+                baseSaqueadores.setText(idsComas.replace(", ", "\n"));
             }
 
             Zona recup = buscarZona("Zona de Reparación y Recuperación");
@@ -129,28 +130,41 @@ public class ServidorGUI extends javax.swing.JFrame {
             }
 
             // --- CONTROL GLOBAL (Columna Derecha abajo) ---
-            int totalPatrullas = 0;
             int totalSaqueadores = 0;
-            
+            StringBuilder sbPatrullas = new StringBuilder();
+
             for (Zona z : zonas) {
-                totalPatrullas += z.getNumeroPatrullas();
-                totalSaqueadores += z.getNumeroSaqueadores(); 
+                totalSaqueadores += z.getNumeroSaqueadores();
+
+                // Recorremos las patrullas reales que están físicamente en cada zona
+                for (PatrullaFederal p : z.getPatrullasPresentesList()) {
+                    if (sbPatrullas.length() > 0) {
+                        sbPatrullas.append("\n"); // Salto de línea estricto para ponerlas una debajo de otra
+                    }
+                    sbPatrullas.append(" • ").append(p.getIdPatrulla()).append("  ->  ").append(z.getId());
+                }
             }
-            patrullasFederales.setText(String.valueOf(totalPatrullas));
+
+            if (sbPatrullas.length() == 0) {
+                patrullasFederales.setText(" Ninguna patrulla desplegada en el sistema.");
+            } else {
+                patrullasFederales.setText(sbPatrullas.toString());
+            }
+
             saqueadoresAtacando.setText(String.valueOf(totalSaqueadores));
 
         } catch (Exception e) {
             System.err.println("Error actualizando interfaz local: " + e.getMessage());
         }
     }
-    
+
     // Método auxiliar para pintar cada planeta fácilmente
     private void actualizarPlaneta(String nombre, javax.swing.JLabel lblDel, javax.swing.JLabel lblPat, javax.swing.JLabel lblEst) {
         Zona planeta = buscarZona(nombre);
         if (planeta != null) {
             lblDel.setText(planeta.getNumeroDelegados() + " / 4");
             lblPat.setText(planeta.getNumeroPatrullas() + " / 3");
-            
+
             if (planeta.isBajoAtaque()) {
                 lblEst.setText("BAJO ATAQUE");
                 lblEst.setForeground(java.awt.Color.RED); // Texto en rojo
@@ -160,7 +174,7 @@ public class ServidorGUI extends javax.swing.JFrame {
             }
         }
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -247,10 +261,12 @@ public class ServidorGUI extends javax.swing.JFrame {
         zonaRR = new javax.swing.JTextField();
         jPanel7 = new javax.swing.JPanel();
         jLabel47 = new javax.swing.JLabel();
-        baseSaqueadores = new javax.swing.JTextField();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        baseSaqueadores = new javax.swing.JTextArea();
         jPanel8 = new javax.swing.JPanel();
         jLabel48 = new javax.swing.JLabel();
-        patrullasFederales = new javax.swing.JTextField();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        patrullasFederales = new javax.swing.JTextArea();
         jPanel9 = new javax.swing.JPanel();
         jLabel49 = new javax.swing.JLabel();
         saqueadoresAtacando = new javax.swing.JLabel();
@@ -658,7 +674,7 @@ public class ServidorGUI extends javax.swing.JFrame {
                                 .addGap(11, 11, 11)
                                 .addComponent(jLabel42)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                .addComponent(ataquePlasma, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addComponent(ataquePlasma, javax.swing.GroupLayout.DEFAULT_SIZE, 73, Short.MAX_VALUE))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
                                 .addGap(6, 6, 6)
                                 .addComponent(jLabel39)
@@ -800,25 +816,21 @@ public class ServidorGUI extends javax.swing.JFrame {
         jLabel47.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel47.setText("BASE DE SAQUEADORES");
 
-        baseSaqueadores.setEditable(false);
-        baseSaqueadores.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                baseSaqueadoresActionPerformed(evt);
-            }
-        });
+        baseSaqueadores.setColumns(20);
+        baseSaqueadores.setRows(5);
+        jScrollPane2.setViewportView(baseSaqueadores);
 
         javax.swing.GroupLayout jPanel7Layout = new javax.swing.GroupLayout(jPanel7);
         jPanel7.setLayout(jPanel7Layout);
         jPanel7Layout.setHorizontalGroup(
             jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel7Layout.createSequentialGroup()
+                .addContainerGap(23, Short.MAX_VALUE)
+                .addComponent(jLabel47, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(17, 17, 17))
+            .addGroup(jPanel7Layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel7Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(baseSaqueadores)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel7Layout.createSequentialGroup()
-                        .addGap(0, 37, Short.MAX_VALUE)
-                        .addComponent(jLabel47, javax.swing.GroupLayout.PREFERRED_SIZE, 214, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(11, 11, 11)))
+                .addComponent(jScrollPane2)
                 .addContainerGap())
         );
         jPanel7Layout.setVerticalGroup(
@@ -826,8 +838,8 @@ public class ServidorGUI extends javax.swing.JFrame {
             .addGroup(jPanel7Layout.createSequentialGroup()
                 .addComponent(jLabel47, javax.swing.GroupLayout.PREFERRED_SIZE, 22, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(baseSaqueadores)
-                .addContainerGap())
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel8.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
@@ -835,19 +847,22 @@ public class ServidorGUI extends javax.swing.JFrame {
         jLabel48.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel48.setText("PATRULLAS FEDERALES");
 
-        patrullasFederales.setEditable(false);
+        patrullasFederales.setColumns(20);
+        patrullasFederales.setRows(5);
+        jScrollPane1.setViewportView(patrullasFederales);
 
         javax.swing.GroupLayout jPanel8Layout = new javax.swing.GroupLayout(jPanel8);
         jPanel8.setLayout(jPanel8Layout);
         jPanel8Layout.setHorizontalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel8Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(patrullasFederales)
-                .addContainerGap())
-            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addGap(16, 16, 16)
                 .addComponent(jLabel48)
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(jPanel8Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 234, Short.MAX_VALUE)
+                .addContainerGap())
         );
         jPanel8Layout.setVerticalGroup(
             jPanel8Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -855,8 +870,8 @@ public class ServidorGUI extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(jLabel48)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(patrullasFederales)
-                .addContainerGap())
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel9.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
@@ -872,21 +887,22 @@ public class ServidorGUI extends javax.swing.JFrame {
         jPanel9Layout.setHorizontalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel9Layout.createSequentialGroup()
-                .addGap(21, 21, 21)
+                .addContainerGap()
                 .addComponent(jLabel49)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(15, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel9Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(saqueadoresAtacando, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(45, 45, 45))
+                .addGap(42, 42, 42))
         );
         jPanel9Layout.setVerticalGroup(
             jPanel9Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel9Layout.createSequentialGroup()
+                .addContainerGap()
                 .addComponent(jLabel49)
                 .addGap(18, 18, 18)
                 .addComponent(saqueadoresAtacando)
-                .addContainerGap(26, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel10.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED));
@@ -951,28 +967,24 @@ public class ServidorGUI extends javax.swing.JFrame {
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addComponent(jPanel9, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                     .addGroup(layout.createSequentialGroup()
                                         .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addGap(0, 0, Short.MAX_VALUE))
-                                    .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addGap(18, 18, 18))
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jPanel8, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(layout.createSequentialGroup()
-                                        .addGap(34, 34, 34)
-                                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                    .addGroup(layout.createSequentialGroup()
                                         .addGap(18, 18, 18)
-                                        .addComponent(jPanel7, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(15, 15, 15)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel10, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
-                .addContainerGap())
+                                        .addComponent(jPanel6, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addComponent(jPanel10, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1000,8 +1012,8 @@ public class ServidorGUI extends javax.swing.JFrame {
                         .addGap(18, 18, 18)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(jPanel8, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(jPanel7, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jPanel9, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -1012,10 +1024,6 @@ public class ServidorGUI extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_textoCCFActionPerformed
 
-    private void baseSaqueadoresActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_baseSaqueadoresActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_baseSaqueadoresActionPerformed
-
     private void zonaRRActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_zonaRRActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_zonaRRActionPerformed
@@ -1025,7 +1033,7 @@ public class ServidorGUI extends javax.swing.JFrame {
     private javax.swing.JLabel ataqueCristal;
     private javax.swing.JLabel ataqueMineral;
     private javax.swing.JLabel ataquePlasma;
-    private javax.swing.JTextField baseSaqueadores;
+    private javax.swing.JTextArea baseSaqueadores;
     private javax.swing.JLabel cristalActual;
     private javax.swing.JLabel delegadoCryon;
     private javax.swing.JLabel delegadosDrax;
@@ -1101,10 +1109,12 @@ public class ServidorGUI extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel7;
     private javax.swing.JPanel jPanel8;
     private javax.swing.JPanel jPanel9;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JLabel mineralActual;
     private javax.swing.JLabel patrullasCryon;
     private javax.swing.JLabel patrullasDrax;
-    private javax.swing.JTextField patrullasFederales;
+    private javax.swing.JTextArea patrullasFederales;
     private javax.swing.JLabel patrullasFerrum;
     private javax.swing.JLabel patrullasIgnis;
     private javax.swing.JLabel patrullasVelora;

@@ -4,7 +4,6 @@ logica\Deposito.class
 cliente\ClienteGUI$2.class
 logica\DelegadoComercial.class
 comun\InterfazFederacion.class
-logica\ServidorGUI$3.class
 logica\GestorEventos.class
 logica\Saqueador.class
 logica\FederacionLog.class
