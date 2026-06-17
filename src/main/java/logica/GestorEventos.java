@@ -11,7 +11,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author hecto
  */
-public class GestorEventos extends Thread{
+public class GestorEventos extends Thread {
+
     private boolean pausado = false;
     private final FederacionLog log; // Usa tu HawkinsLog renombrado
     private final Random random = new Random();
@@ -35,11 +36,13 @@ public class GestorEventos extends Thread{
     // Listas concurrentes para controlar los aforos máximos globales
     private final CopyOnWriteArrayList<PatrullaFederal> listaPatrullas;
     private final CopyOnWriteArrayList<Saqueador> listaSaqueadores;
+    private final CopyOnWriteArrayList<DelegadoComercial> listaDelegados;
+    private int contadorDelegados = 11;
 
     public GestorEventos(FederacionLog log, Deposito dCristal, Deposito dMineral, Deposito dPlasma,
-                         Zona[] planetas, Deposito[] depositos, Zona hangar, Zona baseSaqueadores, Zona zonaRecuperacion,
-                         CopyOnWriteArrayList<PatrullaFederal> listaPatrullas, 
-                         CopyOnWriteArrayList<Saqueador> listaSaqueadores) {
+            Zona[] planetas, Deposito[] depositos, Zona hangar, Zona baseSaqueadores, Zona zonaRecuperacion,
+            CopyOnWriteArrayList<PatrullaFederal> listaPatrullas,
+            CopyOnWriteArrayList<Saqueador> listaSaqueadores, CopyOnWriteArrayList<DelegadoComercial> listaDelegados) {
         this.log = log;
         this.depositoCristal = dCristal;
         this.depositoMineral = dMineral;
@@ -51,12 +54,12 @@ public class GestorEventos extends Thread{
         this.zonaRecuperacion = zonaRecuperacion;
         this.listaPatrullas = listaPatrullas;
         this.listaSaqueadores = listaSaqueadores;
-        
+        this.listaDelegados = listaDelegados;
         // Inicializamos el contador de patrullas asumiendo que el Main creará las 2 primeras
-        this.contadorPatrullas = 3; 
+        this.contadorPatrullas = 3;  
     }
 
-    // --- 1. CONTROL DE PAUSA GLOBAL ---
+    // ---  CONTROL DE PAUSA GLOBAL ---
     public synchronized void comprobarPausa() throws InterruptedException {
         while (pausado) {
             this.wait();
@@ -69,15 +72,38 @@ public class GestorEventos extends Thread{
             this.notifyAll(); // Despierta a todo el universo
         }
     }
+    
+    public synchronized void comprobarNuevosDelegados() {
+        boolean hayDesabastecimiento =
+            depositoCristal.getCantidadAlmacenada() < 25 ||
+            depositoMineral.getCantidadAlmacenada() < 20 ||
+            depositoPlasma.getCantidadAlmacenada()  < 15;
 
-    // --- 2. GESTIÓN DE REFUERZOS AUTOMÁTICOS ---
+        // Contar los delegados que NO están en zona de recuperación
+        long activos = listaDelegados.stream()
+            .filter(d -> !zonaRecuperacion.getDelegadosPresentes().contains(d))
+            .count();
+
+        if (hayDesabastecimiento && activos < 20) {
+            String idNuevo = String.format("D%03d", contadorDelegados++);
+            DelegadoComercial nuevo = new DelegadoComercial(contadorDelegados - 1,
+                planetas[0], planetas[1], planetas[3], planetas[4],
+                depositoCristal, depositoMineral, depositoPlasma,
+                zonaRecuperacion, log, this);
+            listaDelegados.add(nuevo);
+            nuevo.start();
+            log.escribir("Nuevo delegado generado por desabastecimiento: " + idNuevo);
+        }
+    }
+
+    // --- GESTIÓN DE REFUERZOS AUTOMÁTICOS ---
     // Este método lo llama el DelegadoComercial justo después de depositar
     public synchronized void comprobarRefuerzos() {
         // Comprobamos los umbrales exactos del enunciado y el límite de 20 patrullas
-        if (depositoCristal.getCantidadAlmacenada() >= 150 &&
-            depositoMineral.getCantidadAlmacenada() >= 100 &&
-            depositoPlasma.getCantidadAlmacenada() >= 75 &&
-            listaPatrullas.size() < 20) {
+        if (depositoCristal.getCantidadAlmacenada() >= 150
+                && depositoMineral.getCantidadAlmacenada() >= 100
+                && depositoPlasma.getCantidadAlmacenada() >= 75
+                && listaPatrullas.size() < 20) {
 
             // Si hay recursos, los "robamos" (consumimos)
             depositoCristal.robarRecurso(150);
@@ -94,7 +120,7 @@ public class GestorEventos extends Thread{
         }
     }
 
-    // --- 3. BUCLE DE GENERACIÓN DE SAQUEADORES ---
+    // --- BUCLE DE GENERACIÓN DE SAQUEADORES ---
     @Override
     public void run() {
         try {
@@ -102,8 +128,8 @@ public class GestorEventos extends Thread{
                 comprobarPausa();
 
                 // El sistema crea un saqueador cada 10-20 segundos
-                int tiempoEspera = 10 + random.nextInt(11); 
-                
+                int tiempoEspera = 10 + random.nextInt(11);
+
                 // Troceamos la espera en siestas de 1 segundo para que reaccione a la pausa
                 for (int i = 0; i < tiempoEspera; i++) {
                     comprobarPausa();
@@ -114,7 +140,7 @@ public class GestorEventos extends Thread{
                 if (listaSaqueadores.size() < 40) {
                     String idSaqueador = String.format("S%03d", contadorSaqueadores++);
                     Saqueador nuevoSaqueador = new Saqueador(idSaqueador, planetas, depositos, baseSaqueadores, log, this);
-                    listaSaqueadores.add(nuevoSaqueador);
+                    listaSaqueadores.add(nuevoSaqueador); 
                     nuevoSaqueador.start();
                 }
             }

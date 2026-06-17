@@ -28,7 +28,7 @@ public class DelegadoComercial extends Thread{
     private final Random random = new Random();
     
     // Bandera para saber si fue expulsado por un saqueador
-    private boolean expulsado = false;
+    private boolean expulsado = false; --> condiciones de carrera
 
     public DelegadoComercial(int idNumerico, Zona centro, Zona[] pCristal, Zona[] pMineral, Zona pPlasma, 
                              Deposito dCristal, Deposito dMineral, Deposito dPlasma, Zona zRecuperacion, 
@@ -60,14 +60,14 @@ public class DelegadoComercial extends Thread{
     public void run() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                // 1. CENTRO DE COORDINACIÓN
+                // CENTRO DE COORDINACIÓN
                 gestor.comprobarPausa();
                 centroCoordinacion.entrarDelegado(this);
                 log.escribir(id + " preparando solicitud en el Centro de Coordinación.");
                 Thread.sleep(2000 + random.nextInt(2001)); // 2 a 4 segundos
                 centroCoordinacion.salirDelegado(this);
                 
-                // 2. SELECCIÓN DE RECURSO Y PLANETA
+                // SELECCIÓN DE RECURSO Y PLANETA
                 int tipoRecurso = random.nextInt(3); // 0: Cristal, 1: Mineral, 2: Plasma
                 Zona planetaDestino;
                 Deposito depositoDestino;
@@ -83,7 +83,7 @@ public class DelegadoComercial extends Thread{
                     depositoDestino = depositoPlasma;
                 }
                 
-                // 3. VIAJE AL PLANETA Y EXTRACCIÓN
+                // VIAJE AL PLANETA Y EXTRACCIÓN
                 gestor.comprobarPausa();
                 planetaDestino.entrarDelegado(this); // Aquí se bloquea si hay 4 delegados o hay ataque
                 log.escribir(id + " comienza extracción en " + planetaDestino.getId() + ".");
@@ -93,16 +93,16 @@ public class DelegadoComercial extends Thread{
                 
                 planetaDestino.salirDelegado(this);
                 
-                // 4. BIFURCACIÓN: ¿FUE ATACADO DURANTE LA EXTRACCIÓN?
+                // BIFURCACIÓN: ¿FUE ATACADO DURANTE LA EXTRACCIÓN?
                 if (expulsado) {
                     log.escribir(id + " huye a la Zona de Recuperación tras el ataque.");
                     zonaRecuperacion.entrarDelegado(this);
-                    Thread.sleep(10000 + random.nextInt(5001)); // 10 a 15 segundos
+                    Thread.sleep(5000 + random.nextInt(5001)); // 10 a 15 segundos
                     zonaRecuperacion.salirDelegado(this);
                     continue; // Vuelve al Centro de Coordinación (inicio del while) sin depositar
                 }
                 
-                // 5. SI NO HUBO ATAQUE: DEPOSITAR RECURSOS
+                // SI NO HUBO ATAQUE: DEPOSITAR RECURSOS
                 int cantidadExtraida = 10 + random.nextInt(16); // 10 a 25 unidades
                 log.escribir(id + " extrae " + cantidadExtraida + " uds y viaja a " + depositoDestino.getId());
                 

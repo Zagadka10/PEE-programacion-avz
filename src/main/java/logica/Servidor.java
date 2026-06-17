@@ -45,9 +45,11 @@ public class Servidor extends UnicastRemoteObject implements InterfazFederacion{
 
     @Override
     public int getNumeroDelegadosEnZona(String nombreZona) throws RemoteException {
-        // Busca en el ArrayList la zona por su nombre y devuelve su aforo
         for (Zona z : zonas) {
             if (z.getId().equalsIgnoreCase(nombreZona)) {
+                if (nombreZona.equalsIgnoreCase("Base de Saqueadores")) {
+                    return z.getNumeroSaqueadores(); // Pide saqueadores, no delegados
+                }
                 return z.getNumeroDelegados();
             }
         }

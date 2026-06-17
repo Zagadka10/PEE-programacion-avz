@@ -11,11 +11,12 @@ public class Zona {
 
     // Colecciones seguras para los hilos presentes
     private final CopyOnWriteArrayList<DelegadoComercial> delegadosPresentes;
+    private final CopyOnWriteArrayList<Saqueador> saqueadoresPresentesList = new CopyOnWriteArrayList<>();
     private int patrullasPresentes = 0; // Máximo 3 por zona según el enunciado
 
     // --- HERRAMIENTAS DE SINCRONIZACIÓN ---
     // con true activamos modo fair, cola FIFO estricta.
-    final ReentrantLock cerrojo = new ReentrantLock(true);
+    private final ReentrantLock cerrojo = new ReentrantLock(true);
     private final Condition colaDelegados = cerrojo.newCondition();
     private final Condition colaAtaque = cerrojo.newCondition();
 
@@ -36,6 +37,18 @@ public class Zona {
 
     public String getId() {
         return id;
+    }
+    
+    public void entrarSaqueador(Saqueador s) {
+        saqueadoresPresentesList.add(s);
+    }
+
+    public void salirSaqueador(Saqueador s) {
+        saqueadoresPresentesList.remove(s);
+    }
+
+    public int getNumeroSaqueadores() {
+        return saqueadoresPresentesList.size();
     }
 
     // Método para que un Delegado intente entrar a la zona
@@ -151,11 +164,45 @@ public class Zona {
     public int getNumeroDelegadosEnCola() {
         cerrojo.lock();
         try {
-            // Devuelve la longitud de la cola de la condición "colaDelegados"
-            return cerrojo.getWaitQueueLength(colaDelegados);
+            // Sumamos los que esperan por aforo + los que esperan a que acabe un ataque
+            return cerrojo.getWaitQueueLength(colaDelegados) + cerrojo.getWaitQueueLength(colaAtaque);
         } finally {
             cerrojo.unlock();
         }
+    }
+    
+    // PARA GUI
+    // Devuelve un texto con los IDs de los delegados presentes
+    public String getListaIdsDelegados() {
+        if (delegadosPresentes.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < delegadosPresentes.size(); i++) {
+            sb.append(delegadosPresentes.get(i).getIdDelegado());
+            if (i < delegadosPresentes.size() - 1) sb.append(", ");
+        }
+        return sb.toString();
+    }
+
+    // Devuelve un texto con los IDs de las patrullas presentes
+    public String getListaIdsPatrullas() {
+        if (patrullasPresentesList.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < patrullasPresentesList.size(); i++) {
+            sb.append(patrullasPresentesList.get(i).getIdPatrulla());
+            if (i < patrullasPresentesList.size() - 1) sb.append(", ");
+        }
+        return sb.toString();
+    }
+
+    // Devuelve un texto con los IDs de los saqueadores presentes
+    public String getListaIdsSaqueadores() {
+        if (saqueadoresPresentesList.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < saqueadoresPresentesList.size(); i++) {
+            sb.append(saqueadoresPresentesList.get(i).getIdSaqueador());
+            if (i < saqueadoresPresentesList.size() - 1) sb.append(", ");
+        }
+        return sb.toString();
     }
     
 }

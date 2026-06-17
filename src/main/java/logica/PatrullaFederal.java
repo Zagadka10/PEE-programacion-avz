@@ -54,14 +54,14 @@ public class PatrullaFederal extends Thread{
     @Override
     public void run() {
         try {
-            // INICIO DE LA PATRULLA: Empieza en el Hangar
             gestor.comprobarPausa();
+            hangar.entrarPatrulla(this); 
             log.escribir(id + " preparando sistemas en el Hangar de Patrullas.");
-            dormirConPausa(3000 + random.nextInt(3001)); // 3 a 6 segundos
+            dormirConPausa(3000 + random.nextInt(3001));
+            hangar.salirPatrulla(this); // Salen a patrullar
 
             while (!Thread.currentThread().isInterrupted()) {
                 
-                // 1. ELEGIR ZONA A PATRULLAR (Planeta o Depósito aleatorio)
                 Zona zonaDestino;
                 if (random.nextBoolean()) {
                     zonaDestino = planetas[random.nextInt(planetas.length)];
@@ -69,32 +69,30 @@ public class PatrullaFederal extends Thread{
                     zonaDestino = depositos[random.nextInt(depositos.length)];
                 }
 
-                // 2. ENTRAR Y PATRULLAR
                 gestor.comprobarPausa();
-                zonaDestino.entrarPatrulla(this); // Aquí se bloquea si ya hay 3 patrullas
+                zonaDestino.entrarPatrulla(this); 
                 log.escribir(id + " patrullando en " + zonaDestino.getId() + ".");
                 
-                dormirConPausa(2000 + random.nextInt(2001)); // Patrulla de 2 a 4 segundos
+                dormirConPausa(2000 + random.nextInt(2001)); 
 
-                // 3. GESTIÓN DE COMBATE
-                // Si la zona es atacada mientras patrulla, no se va hasta que el ataque termine
                 while (zonaDestino.isBajoAtaque()) {
-                    dormirConPausa(500); // Espera expectante a que acabe el combate
+                    dormirConPausa(500);
                 }
 
-                // 4. SALIR DE LA ZONA
                 zonaDestino.salirPatrulla(this);
 
-                // 5. COMPROBAR SI FUE DERROTADA EN EL COMBATE
                 if (derrotada) {
                     log.escribir(id + " sistemas críticos. Entrando en Zona de Recuperación.");
+                    zonaRecuperacion.entrarPatrulla(this); // Fichan en recuperación
+                    Thread.sleep(5000 + random.nextInt(5001)); 
+                    zonaRecuperacion.salirPatrulla(this);
                     
-                    dormirConPausa(8000 + random.nextInt(4001)); // Recuperación de 8 a 12 segundos
-                    
-                    derrotada = false; // Sistemas reparados
+                    derrotada = false; 
                     
                     log.escribir(id + " reparada. Volviendo al Hangar.");
-                    dormirConPausa(3000 + random.nextInt(3001)); // Vuelve a preparar sistemas en el Hangar de 3 a 6s
+                    hangar.entrarPatrulla(this); // Vuelven a fichar en hangar
+                    dormirConPausa(3000 + random.nextInt(3001)); 
+                    hangar.salirPatrulla(this);
                 }
             }
         } catch (InterruptedException e) {

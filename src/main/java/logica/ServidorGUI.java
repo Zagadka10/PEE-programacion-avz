@@ -51,19 +51,19 @@ public class ServidorGUI extends javax.swing.JFrame {
             int cantMineral = depositos[1].getCantidadAlmacenada();
             int cantPlasma = depositos[2].getCantidadAlmacenada();
 
-            // --- 1. RECURSOS ALMACENADOS (Panel Superior) ---
+            // --- RECURSOS ALMACENADOS (Panel Superior) ---
             cristalActual.setText(cantCristal + " / 250");
             mineralActual.setText(cantMineral + " / 200");
             plasmaActual.setText(cantPlasma + " / 150");
 
-            // --- NUEVO: REFUERZOS AUTOMÁTICOS ---
+            // --- REFUERZOS AUTOMÁTICOS ---
             if (cantCristal >= 150 && cantMineral >= 100 && cantPlasma >= 75) {
                 estadoRefuerzos.setText("ACTIVO");
             } else {
                 estadoRefuerzos.setText("INACTIVO");
             }
 
-            // --- NUEVO: DETALLE DE DEPÓSITOS (Columna Derecha) ---
+            // --- DETALLE DE DEPÓSITOS (Columna Derecha) ---
             // >>> CRISTAL (Índice 0)
             depositandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegados()));
             // Nota: Si en tu clase Deposito no tienes getNumeroDelegadosEnCola(), pon un "0" fijo aquí.
@@ -88,7 +88,7 @@ public class ServidorGUI extends javax.swing.JFrame {
             }
 
             // >>> PLASMA (Índice 2)
-            esperandoPlasma.setText(String.valueOf(depositos[2].getNumeroDelegados()));
+            depositandoPlasma.setText(String.valueOf(depositos[2].getNumeroDelegados()));
             esperandoPlasma.setText(String.valueOf(depositos[2].getNumeroDelegadosEnCola()));
             if (depositos[2].isBajoAtaque()) {
                 ataquePlasma.setText("● ¡ATAQUE!");
@@ -98,32 +98,47 @@ public class ServidorGUI extends javax.swing.JFrame {
                 ataquePlasma.setForeground(new java.awt.Color(0, 153, 0));
             }
 
-            // --- 2. PLANETAS MINEROS (Columna Izquierda) ---
+            // --- PLANETAS MINEROS (Columna Izquierda) ---
             actualizarPlaneta("Cryon", delegadoCryon, patrullasCryon, estadoCryon);
             actualizarPlaneta("Velora", delegadosVelora, patrullasVelora, estadoVelora);
             actualizarPlaneta("Ferrum", delegadosFerrum, patrullasFerrum, estadoFerrum);
             actualizarPlaneta("Drax", delegadosDrax, patrullasDrax, estadoDrax);
             actualizarPlaneta("Ignis", delegadosIgnis, patrullasIgnis, estadoIgnis);
 
-            // --- 3. ZONAS CENTRALES Y DE DESCANSO ---
+            // --- ZONAS CENTRALES Y DE DESCANSO ---
             Zona centro = buscarZona("Centro de Coordinación Federal");
-            if (centro != null) textoCCF.setText("Delegados presentes: " + centro.getNumeroDelegados());
+            if (centro != null) {
+                textoCCF.setText(centro.getListaIdsDelegados());
+            }
 
             Zona hangar = buscarZona("Hangar de Patrullas");
-            if (hangar != null) hangarPatrullas.setText("Patrullas esperando: " + hangar.getNumeroPatrullas());
+            if (hangar != null) {
+                hangarPatrullas.setText(hangar.getListaIdsPatrullas());
+            }
 
             Zona base = buscarZona("Base de Saqueadores");
-            if (base != null) baseSaqueadores.setText("Saqueadores en base: " + base.getNumeroDelegados());
+            if (base != null) {
+                baseSaqueadores.setText(base.getListaIdsSaqueadores());
+            }
 
             Zona recup = buscarZona("Zona de Reparación y Recuperación");
             if (recup != null) {
-                zonaRR.setText("Delegados: " + recup.getNumeroDelegados() + "\nPatrullas: " + recup.getNumeroPatrullas());
+                String delIds = recup.getListaIdsDelegados();
+                String patIds = recup.getListaIdsPatrullas();
+                zonaRR.setText("D: [" + delIds + "] | P: [" + patIds + "]");
             }
 
-            // --- 4. CONTROL GLOBAL (Columna Derecha abajo) ---
+            // --- CONTROL GLOBAL (Columna Derecha abajo) ---
             int totalPatrullas = 0;
-            for (Zona z : zonas) totalPatrullas += z.getNumeroPatrullas();
+            int totalSaqueadores = 0;
+            int atacando = 0;
+            
+            for (Zona z : zonas) {
+                totalPatrullas += z.getNumeroPatrullas();
+                totalSaqueadores += z.getNumeroSaqueadores(); 
+            }
             patrullasFederales.setText(String.valueOf(totalPatrullas));
+            saqueadoresAtacando.setText(String.valueOf(atacando));
 
         } catch (Exception e) {
             System.err.println("Error actualizando interfaz local: " + e.getMessage());
@@ -647,7 +662,9 @@ public class ServidorGUI extends javax.swing.JFrame {
                             .addComponent(jLabel44)
                             .addGroup(jPanel4Layout.createSequentialGroup()
                                 .addGap(11, 11, 11)
-                                .addComponent(jLabel42))
+                                .addComponent(jLabel42)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(ataquePlasma, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel4Layout.createSequentialGroup()
                                 .addGap(6, 6, 6)
                                 .addComponent(jLabel39)
@@ -667,18 +684,13 @@ public class ServidorGUI extends javax.swing.JFrame {
                         .addComponent(ataqueCristal, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(esperandoPlasma, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
                             .addGroup(jPanel4Layout.createSequentialGroup()
-                                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(esperandoPlasma, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addGroup(jPanel4Layout.createSequentialGroup()
-                                        .addComponent(jLabel43)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(depositandoPlasma, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(jPanel4Layout.createSequentialGroup()
-                                .addGap(79, 79, 79)
-                                .addComponent(ataquePlasma, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))))
+                                .addComponent(jLabel43)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addComponent(depositandoPlasma, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
