@@ -664,6 +664,25 @@ public class ClienteGUI extends javax.swing.JFrame {
 
     private void botonPausarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonPausarActionPerformed
         // TODO add your handling code here:
+        try {
+            // Comprobamos el estado del botón (true = hundido/activado)
+            if (botonPausar.isSelected()) {
+                servidor.pausarSimulacion();
+                botonPausar.setText("Reanudar simulación");
+                botonPausar.setForeground(java.awt.Color.RED); // Texto en rojo para alertar de la pausa
+                System.out.println("Comando remoto ejecutado: Simulación PAUSADA.");
+            } else {
+                // Si se vuelve a pulsar (false = soltado/desactivado)
+                servidor.reanudarSimulacion();
+                botonPausar.setText("Pausar simulación");
+                botonPausar.setForeground(new java.awt.Color(0, 0, 0)); // Texto vuelve a negro
+                System.out.println("Comando remoto ejecutado: Simulación REANUDADA.");
+            }
+        } catch (RemoteException e) {
+            System.err.println("Error de red al intentar cambiar la pausa: " + e.getMessage());
+            // Si falla la red, revertimos visualmente el botón a su estado original
+            botonPausar.setSelected(!botonPausar.isSelected());
+        }
     }//GEN-LAST:event_botonPausarActionPerformed
 
     

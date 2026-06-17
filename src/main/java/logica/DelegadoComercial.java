@@ -28,7 +28,7 @@ public class DelegadoComercial extends Thread{
     private final Random random = new Random();
     
     // Bandera para saber si fue expulsado por un saqueador
-    private boolean expulsado = false; --> condiciones de carrera
+    private volatile boolean expulsado = false; 
 
     public DelegadoComercial(int idNumerico, Zona centro, Zona[] pCristal, Zona[] pMineral, Zona pPlasma, 
                              Deposito dCristal, Deposito dMineral, Deposito dPlasma, Zona zRecuperacion, 

@@ -61,11 +61,12 @@ public class Main {
         // LISTAS CONCURRENTES PARA EL CONTROL GLOBAL (Corrección de SaqueadorEspacial)
         CopyOnWriteArrayList<PatrullaFederal> listaPatrullas = new CopyOnWriteArrayList<>();
         CopyOnWriteArrayList<Saqueador> listaSaqueadores = new CopyOnWriteArrayList<>();
+        CopyOnWriteArrayList<DelegadoComercial> listaDelegados = new CopyOnWriteArrayList<>(); 
 
         // CREAR Y ARRANCAR EL CEREBRO DEL SISTEMA
         GestorEventos gestor = new GestorEventos(log, depositoCristal, depositoMineral, depositoPlasma, 
                 todosLosPlanetas, todosLosDepositos, hangar, baseSaqueadores, zonaRecuperacion, 
-                listaPatrullas, listaSaqueadores);
+                listaPatrullas, listaSaqueadores, listaDelegados, centroCoordinacion);
         gestor.start();
         
         ServidorGUI ventanaServidor = new ServidorGUI(listaZonasCompleta, todosLosDepositos);

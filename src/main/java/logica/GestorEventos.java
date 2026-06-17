@@ -37,12 +37,14 @@ public class GestorEventos extends Thread {
     private final CopyOnWriteArrayList<PatrullaFederal> listaPatrullas;
     private final CopyOnWriteArrayList<Saqueador> listaSaqueadores;
     private final CopyOnWriteArrayList<DelegadoComercial> listaDelegados;
+    private final Zona centroCoordinacion;
     private int contadorDelegados = 11;
 
     public GestorEventos(FederacionLog log, Deposito dCristal, Deposito dMineral, Deposito dPlasma,
             Zona[] planetas, Deposito[] depositos, Zona hangar, Zona baseSaqueadores, Zona zonaRecuperacion,
             CopyOnWriteArrayList<PatrullaFederal> listaPatrullas,
-            CopyOnWriteArrayList<Saqueador> listaSaqueadores, CopyOnWriteArrayList<DelegadoComercial> listaDelegados) {
+            CopyOnWriteArrayList<Saqueador> listaSaqueadores, CopyOnWriteArrayList<DelegadoComercial> listaDelegados,
+            Zona centroCoordinacion) {
         this.log = log;
         this.depositoCristal = dCristal;
         this.depositoMineral = dMineral;
@@ -55,6 +57,7 @@ public class GestorEventos extends Thread {
         this.listaPatrullas = listaPatrullas;
         this.listaSaqueadores = listaSaqueadores;
         this.listaDelegados = listaDelegados;
+        this.centroCoordinacion = centroCoordinacion;
         // Inicializamos el contador de patrullas asumiendo que el Main creará las 2 primeras
         this.contadorPatrullas = 3;  
     }
@@ -86,8 +89,10 @@ public class GestorEventos extends Thread {
 
         if (hayDesabastecimiento && activos < 20) {
             String idNuevo = String.format("D%03d", contadorDelegados++);
+            Zona[] pCristal = {planetas[0], planetas[1]};
+            Zona[] pMineral = {planetas[2], planetas[3]};
             DelegadoComercial nuevo = new DelegadoComercial(contadorDelegados - 1,
-                planetas[0], planetas[1], planetas[3], planetas[4],
+                centroCoordinacion, pCristal, pMineral, planetas[4],
                 depositoCristal, depositoMineral, depositoPlasma,
                 zonaRecuperacion, log, this);
             listaDelegados.add(nuevo);
