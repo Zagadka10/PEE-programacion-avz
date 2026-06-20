@@ -65,70 +65,84 @@ public class Saqueador extends Thread {
                         disponibles.add(z);
                     }
                 }
+
                 if (!disponibles.isEmpty()) {
                     objetivo = disponibles.get(random.nextInt(disponibles.size()));
                 } else {
-                    objetivo = opciones[random.nextInt(opciones.length)]; // entra en cola
-                }
+                    Zona[] opcionesAlternativas = atacaDeposito ? planetas : depositos;
+                    for (Zona z : opcionesAlternativas) {
+                        if (!z.isBajoAtaque()) {
+                            disponibles.add(z);
+                        }
+                    }
 
-                // INICIAR ATAQUE
-                gestor.comprobarPausa();
-                objetivo.entrarSaqueador(this); // El saqueador ficha en el planeta/depósito
-                objetivo.iniciarAtaque();
-                log.escribir(id + " inicia el ataque en " + objetivo.getId());
-
-                // FASE DE COMBATE
-                boolean ataqueExitoso = true;
-                PatrullaFederal patrullaDefensora = objetivo.obtenerPatrullaDefensora();
-
-                if (patrullaDefensora != null) {
-                    log.escribir(id + " entra en combate con " + patrullaDefensora.getIdPatrulla() + " en " + objetivo.getId());
-                    dormirConPausa(6000);
-
-                    if (random.nextBoolean()) {
-                        ataqueExitoso = false;
-                        log.escribir(id + " ha sido derrotado por " + patrullaDefensora.getIdPatrulla());
+                    if (!disponibles.isEmpty()) {
+                        objetivo = disponibles.get(random.nextInt(disponibles.size()));
                     } else {
-                        patrullaDefensora.serDerrotada();
-                        log.escribir(id + " ha destruido a " + patrullaDefensora.getIdPatrulla());
+                        // Si todo el universo está bajo ataque, el saqueador aborta la misión y vuelve a la base
+                        continue;
                     }
-                } else {
-                    dormirConPausa(1000);
-                }
 
-                // FASE DE ASALTO
-                if (ataqueExitoso) {
-                    for (DelegadoComercial delegado : objetivo.getDelegadosPresentes()) {
-                        delegado.serExpulsado();
-                    }
-                    if (atacaDeposito) {
-                        int cantidadARobar = 10 + random.nextInt(21);
-                        int robado = ((Deposito) objetivo).robarRecurso(cantidadARobar);
-                        log.escribir(id + " ha saqueado " + robado + " uds en " + objetivo.getId());
+                    // INICIAR ATAQUE
+                    gestor.comprobarPausa();
+                    objetivo.entrarSaqueador(this); // El saqueador ficha en el planeta/depósito
+                    objetivo.iniciarAtaque();
+                    log.escribir(id + " inicia el ataque en " + objetivo.getId());
+
+                    // FASE DE COMBATE
+                    boolean ataqueExitoso = true;
+                    PatrullaFederal patrullaDefensora = objetivo.obtenerPatrullaDefensora();
+
+                    if (patrullaDefensora != null) {
+                        log.escribir(id + " entra en combate con " + patrullaDefensora.getIdPatrulla() + " en " + objetivo.getId());
+                        dormirConPausa(6000);
+
+                        if (random.nextBoolean()) {
+                            ataqueExitoso = false;
+                            log.escribir(id + " ha sido derrotado por " + patrullaDefensora.getIdPatrulla());
+                        } else {
+                            patrullaDefensora.serDerrotada();
+                            log.escribir(id + " ha destruido a " + patrullaDefensora.getIdPatrulla());
+                        }
                     } else {
-                        log.escribir(id + " ha interrumpido la extracción en " + objetivo.getId());
+                        dormirConPausa(1000);
                     }
 
-                    objetivo.finalizarAtaque();
-                    objetivo.salirSaqueador(this); // Sale de la zona de ataque
+                    // FASE DE ASALTO
+                    if (ataqueExitoso) {
+                        for (DelegadoComercial delegado : objetivo.getDelegadosPresentes()) {
+                            delegado.serExpulsado();
+                        }
+                        if (atacaDeposito) {
+                            int cantidadARobar = 10 + random.nextInt(21);
+                            int robado = ((Deposito) objetivo).robarRecurso(cantidadARobar);
+                            log.escribir(id + " ha saqueado " + robado + " uds en " + objetivo.getId());
+                        } else {
+                            log.escribir(id + " ha interrumpido la extracción en " + objetivo.getId());
+                        }
 
-                    log.escribir(id + " regresa victorioso a la base.");
-                    baseSaqueadores.entrarSaqueador(this); // Vuelve a la base
-                    dormirConPausa(10000);
-                    baseSaqueadores.salirSaqueador(this);
+                        objetivo.finalizarAtaque();
+                        objetivo.salirSaqueador(this); // Sale de la zona de ataque
 
-                } else {
-                    objetivo.finalizarAtaque();
-                    objetivo.salirSaqueador(this); // Sale de la zona de ataque
+                        log.escribir(id + " regresa victorioso a la base.");
+                        baseSaqueadores.entrarSaqueador(this); // Vuelve a la base
+                        dormirConPausa(10000);
+                        baseSaqueadores.salirSaqueador(this);
 
-                    log.escribir(id + " huye a la base para reparaciones.");
-                    baseSaqueadores.entrarSaqueador(this); // Vuelve a la base
-                    dormirConPausa(20000);
-                    baseSaqueadores.salirSaqueador(this);
+                    } else {
+                        objetivo.finalizarAtaque();
+                        objetivo.salirSaqueador(this); // Sale de la zona de ataque
+
+                        log.escribir(id + " huye a la base para reparaciones.");
+                        baseSaqueadores.entrarSaqueador(this); // Vuelve a la base
+                        dormirConPausa(20000);
+                        baseSaqueadores.salirSaqueador(this);
+                    }
                 }
             }
         } catch (InterruptedException e) {
             log.escribir("Hilo interrumpido para el saqueador " + id);
+
         }
     }
 }
