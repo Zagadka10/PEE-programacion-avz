@@ -11,20 +11,20 @@ import java.util.concurrent.locks.Condition;
  *
  * @author hecto
  */
-public class Deposito extends Zona{
-   
+public class Deposito extends Zona {
+
     private final AtomicInteger cantidadAlmacenada;
     private final int capacidadAlmacen;
-    
+
     // Condición extra para cuando el depósito no tiene hueco físico para los recursos
     private final Condition esperaEspacioFisico;
 
     // El depósito siempre permite 3 delegados simultáneos según el enunciado
     public Deposito(String id, int capacidadAlmacen, int cantidadInicial) {
-        super(id, 3); 
+        super(id, 3);
         this.capacidadAlmacen = capacidadAlmacen;
         this.cantidadAlmacenada = new AtomicInteger(cantidadInicial);
-        
+
         // Inicializamos la condición usando el cerrojo heredado de Zona
         this.esperaEspacioFisico = getCerrojo().newCondition();
     }
@@ -32,7 +32,7 @@ public class Deposito extends Zona{
     public int getCantidadAlmacenada() {
         return cantidadAlmacenada.get();
     }
-    
+
     public int getCapacidadAlmacen() {
         return capacidadAlmacen;
     }
@@ -45,10 +45,10 @@ public class Deposito extends Zona{
             while (cantidadAlmacenada.get() + cantidadAIntroducir > capacidadAlmacen) {
                 esperaEspacioFisico.await();
             }
-            
+
             // Si hay hueco, lo sumo de forma atómica
             cantidadAlmacenada.addAndGet(cantidadAIntroducir);
-            
+
         } finally {
             getCerrojo().unlock();
         }
@@ -67,17 +67,17 @@ public class Deposito extends Zona{
                 robado = cantidadARobar;
                 cantidadAlmacenada.addAndGet(-cantidadARobar);
             }
-            
+
             // Al robar, hemos hecho hueco físico en el almacén. 
             // Avisamos a los delegados que estaban esperando para depositar
             esperaEspacioFisico.signalAll();
-            
+
             return robado;
         } finally {
             getCerrojo().unlock();
         }
     }
-    
+
     // Método para la botonera RMI (vaciar depósito)
     public void vaciarDeposito() {
         getCerrojo().lock();

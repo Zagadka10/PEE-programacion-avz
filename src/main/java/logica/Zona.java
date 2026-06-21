@@ -55,17 +55,17 @@ public class Zona {
     public void entrarDelegado(DelegadoComercial delegado) throws InterruptedException {
         cerrojo.lock();
         try {
-            // 1. Si hay un ataque, nadie entra. Se quedan esperando.
+            // Si hay un ataque, nadie entra. Se quedan esperando.
             while (bajoAtaque) {
                 colaAtaque.await();
             }
 
-            // 2. Si la zona está llena, esperan en orden estricto de llegada.
+            // Si la zona está llena, esperan en orden estricto de llegada.
             while (delegadosPresentes.size() >= capacidadMaximaDelegados) {
                 colaDelegados.await();
             }
 
-            // 3. Entra en la zona
+            // Entra en la zona
             delegadosPresentes.add(delegado);
 
         } finally {
@@ -89,8 +89,13 @@ public class Zona {
         return cerrojo;
     }
 
-    public boolean isBajoAtaque() {
-        return bajoAtaque;
+   public boolean isBajoAtaque() {
+        cerrojo.lock();
+        try {
+            return bajoAtaque;
+        } finally {
+            cerrojo.unlock();
+        }
     }
 
     public CopyOnWriteArrayList<DelegadoComercial> getDelegadosPresentes() {

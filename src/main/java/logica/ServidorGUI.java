@@ -59,14 +59,15 @@ public class ServidorGUI extends javax.swing.JFrame {
             // --- REFUERZOS AUTOMÁTICOS ---
             if (cantCristal >= 150 && cantMineral >= 100 && cantPlasma >= 75) {
                 estadoRefuerzos.setText("ACTIVO");
+                estadoRefuerzos.setForeground(java.awt.Color.GREEN);
             } else {
                 estadoRefuerzos.setText("INACTIVO");
+                estadoRefuerzos.setForeground(java.awt.Color.BLACK);
             }
 
             // --- DETALLE DE DEPÓSITOS (Columna Derecha) ---
             // >>> CRISTAL (Índice 0)
             depositandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegados()));
-            // Nota: Si en tu clase Deposito no tienes getNumeroDelegadosEnCola(), pon un "0" fijo aquí.
             esperandoCristal.setText(String.valueOf(depositos[0].getNumeroDelegadosEnCola()));
             if (depositos[0].isBajoAtaque()) {
                 ataqueCristal.setText("● ¡ATAQUE!");
@@ -328,10 +329,11 @@ public class ServidorGUI extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(jLabel8)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 16, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(jLabel4)
+                        .addComponent(jLabel2)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(mineralActual)
@@ -861,7 +863,7 @@ public class ServidorGUI extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(jPanel8Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 234, Short.MAX_VALUE)
+                .addComponent(jScrollPane1)
                 .addContainerGap())
         );
         jPanel8Layout.setVerticalGroup(

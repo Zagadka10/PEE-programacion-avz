@@ -56,7 +56,13 @@ public class Saqueador extends Thread {
 
                 // SELECCIÓN DE OBJETIVO
                 boolean atacaDeposito = random.nextInt(100) < 70;
-                Zona[] opciones = atacaDeposito ? depositos : planetas;
+                Zona[] opciones;
+
+                if (atacaDeposito) {
+                    opciones = depositos;
+                } else {
+                    opciones = planetas;
+                }
                 Zona objetivo = null;
 
                 List<Zona> disponibles = new ArrayList<>();
@@ -66,9 +72,11 @@ public class Saqueador extends Thread {
                     }
                 }
 
+                // Buscamos en las opciones principales
                 if (!disponibles.isEmpty()) {
                     objetivo = disponibles.get(random.nextInt(disponibles.size()));
                 } else {
+                    // Si no hay, buscamos en las alternativas
                     Zona[] opcionesAlternativas = atacaDeposito ? planetas : depositos;
                     for (Zona z : opcionesAlternativas) {
                         if (!z.isBajoAtaque()) {
@@ -78,12 +86,11 @@ public class Saqueador extends Thread {
 
                     if (!disponibles.isEmpty()) {
                         objetivo = disponibles.get(random.nextInt(disponibles.size()));
-                    } else {
-                        // Si todo el universo está bajo ataque, el saqueador aborta la misión y vuelve a la base
-                        continue;
-                    }
+                    } 
+                } 
 
-                    // INICIAR ATAQUE
+                // INICIAR ATAQUE 
+                if (objetivo != null) {
                     gestor.comprobarPausa();
                     objetivo.entrarSaqueador(this); // El saqueador ficha en el planeta/depósito
                     objetivo.iniciarAtaque();
@@ -113,12 +120,13 @@ public class Saqueador extends Thread {
                         for (DelegadoComercial delegado : objetivo.getDelegadosPresentes()) {
                             delegado.serExpulsado();
                         }
-                        if (atacaDeposito) {
+                        if (objetivo instanceof Deposito) {
                             int cantidadARobar = 10 + random.nextInt(21);
+                            // cast es 100% seguro
                             int robado = ((Deposito) objetivo).robarRecurso(cantidadARobar);
                             log.escribir(id + " ha saqueado " + robado + " uds en " + objetivo.getId());
                         } else {
-                            log.escribir(id + " ha interrumpido la extracción en " + objetivo.getId());
+                            log.escribir(id + " ha interrumpido la extracción en el Planeta " + objetivo.getId());
                         }
 
                         objetivo.finalizarAtaque();
@@ -138,6 +146,12 @@ public class Saqueador extends Thread {
                         dormirConPausa(20000);
                         baseSaqueadores.salirSaqueador(this);
                     }
+                } else {
+                    // Si objetivo es null (todo está bajo ataque)
+                    log.escribir(id + " no encuentra zonas libres y aborta la misión temporalmente.");
+                    baseSaqueadores.entrarSaqueador(this); 
+                    dormirConPausa(2000); // Descansa 2 segundos en la base
+                    baseSaqueadores.salirSaqueador(this);
                 }
             }
         } catch (InterruptedException e) {

@@ -98,7 +98,7 @@ public class DelegadoComercial extends Thread {
 
                 planetaDestino.salirDelegado(this);
 
-                // BIFURCACIÓN: ¿FUE ATACADO DURANTE LA EXTRACCIÓN?
+                // ¿FUE ATACADO DURANTE LA EXTRACCIÓN?
                 if (expulsado) {
                     log.escribir(id + " huye a la Zona de Recuperación tras el ataque.");
                     zonaRecuperacion.entrarDelegado(this);
