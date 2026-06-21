@@ -80,6 +80,7 @@ public class Main {
             DelegadoComercial delegado = new DelegadoComercial(i, centroCoordinacion, planetasCristal, 
                     planetasMineral, planetaPlasma, depositoCristal, depositoMineral, depositoPlasma, 
                     zonaRecuperacion, log, gestor);
+            listaDelegados.add(delegado);
             delegado.start();
             
             log.escribir("Generado delegado comercial: D" + String.format("%03d", i));

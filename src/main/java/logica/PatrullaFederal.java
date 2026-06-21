@@ -10,13 +10,14 @@ import java.util.Random;
  *
  * @author hecto
  */
-public class PatrullaFederal extends Thread{
+public class PatrullaFederal extends Thread {
+
     private final String id;
     private final Zona[] planetas;
     private final Deposito[] depositos;
     private final Zona hangar;
     private final Zona zonaRecuperacion;
-    
+
     private final FederacionLog log;
     private final GestorEventos gestor;
     private final Random random = new Random();
@@ -46,7 +47,11 @@ public class PatrullaFederal extends Thread{
     public synchronized boolean isDerrotada() {
         return derrotada;
     }
-    
+
+    public synchronized void resetearDerrota() {
+        this.derrotada = false;
+    }
+
     private void dormirConPausa(long milisegundos) throws InterruptedException {
         long iteraciones = milisegundos / 500;
         for (int i = 0; i < iteraciones; i++) {
@@ -59,13 +64,13 @@ public class PatrullaFederal extends Thread{
     public void run() {
         try {
             gestor.comprobarPausa();
-            hangar.entrarPatrulla(this); 
+            hangar.entrarPatrulla(this);
             log.escribir(id + " preparando sistemas en el Hangar de Patrullas.");
             dormirConPausa(3000 + random.nextInt(3001));
             hangar.salirPatrulla(this); // Salen a patrullar
 
             while (!Thread.currentThread().isInterrupted()) {
-                
+
                 Zona zonaDestino;
                 if (random.nextBoolean()) {
                     zonaDestino = planetas[random.nextInt(planetas.length)];
@@ -74,28 +79,28 @@ public class PatrullaFederal extends Thread{
                 }
 
                 gestor.comprobarPausa();
-                zonaDestino.entrarPatrulla(this); 
+                zonaDestino.entrarPatrulla(this);
                 log.escribir(id + " patrullando en " + zonaDestino.getId() + ".");
-                
-                dormirConPausa(2000 + random.nextInt(2001)); 
 
-                while (zonaDestino.isBajoAtaque() && !derrotada) {
+                dormirConPausa(2000 + random.nextInt(2001));
+
+                while (zonaDestino.isBajoAtaque() && !isDerrotada()) {
                     dormirConPausa(500);
                 }
 
                 zonaDestino.salirPatrulla(this);
 
-                if (derrotada) {
+                if (isDerrotada()) {
                     log.escribir(id + " sistemas críticos. Entrando en Zona de Recuperación.");
                     zonaRecuperacion.entrarPatrulla(this); // Fichan en recuperación
-                    dormirConPausa(5000 + random.nextInt(5001)); 
+                    dormirConPausa(5000 + random.nextInt(5001));
                     zonaRecuperacion.salirPatrulla(this);
-                    
-                    derrotada = false; 
-                    
+
+                    resetearDerrota();
+
                     log.escribir(id + " reparada. Volviendo al Hangar.");
                     hangar.entrarPatrulla(this); // Vuelven a fichar en hangar
-                    dormirConPausa(3000 + random.nextInt(3001)); 
+                    dormirConPausa(3000 + random.nextInt(3001));
                     hangar.salirPatrulla(this);
                 }
             }

@@ -6,6 +6,7 @@ package logica;
 
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  *
@@ -39,6 +40,9 @@ public class GestorEventos extends Thread {
     private final CopyOnWriteArrayList<DelegadoComercial> listaDelegados;
     private final Zona centroCoordinacion;
     private int contadorDelegados = 11;
+    
+    //Para comprobar refuerzos
+    private final ReentrantLock cerrojoRefuerzos = new ReentrantLock();
 
     public GestorEventos(FederacionLog log, Deposito dCristal, Deposito dMineral, Deposito dPlasma,
             Zona[] planetas, Deposito[] depositos, Zona hangar, Zona baseSaqueadores, Zona zonaRecuperacion,
@@ -103,27 +107,43 @@ public class GestorEventos extends Thread {
 
     // --- GESTIÓN DE REFUERZOS AUTOMÁTICOS ---
     // Este método lo llama el DelegadoComercial justo después de depositar
-    public synchronized void comprobarRefuerzos() {
-        // Comprobamos los umbrales exactos del enunciado y el límite de 20 patrullas
+    public void comprobarRefuerzos() { 
+        // Filtro rápido sin bloqueo para no saturar el rendimiento
         if (depositoCristal.getCantidadAlmacenada() >= 150
                 && depositoMineral.getCantidadAlmacenada() >= 100
                 && depositoPlasma.getCantidadAlmacenada() >= 75
                 && listaPatrullas.size() < 20) {
 
-            // Si hay recursos, los "robamos" (consumimos)
-            depositoCristal.robarRecurso(150);
-            depositoMineral.robarRecurso(100);
-            depositoPlasma.robarRecurso(75);
+            // Si parece que hay recursos, cogemos el cerrojo de forma ordenada
+            cerrojoRefuerzos.lock();
+            try {
+                // 3. Doble comprobación obligatoria: puede que otro hilo nos haya 
+                // robado los recursos mientras esperábamos por el cerrojo
+                if (depositoCristal.getCantidadAlmacenada() >= 150
+                        && depositoMineral.getCantidadAlmacenada() >= 100
+                        && depositoPlasma.getCantidadAlmacenada() >= 75
+                        && listaPatrullas.size() < 20) {
 
-            // Creamos e iniciamos la nueva patrulla
-            String idNueva = String.format("P%03d", contadorPatrullas++);
-            PatrullaFederal nuevaPatrulla = new PatrullaFederal(idNueva, planetas, depositos, hangar, zonaRecuperacion, log, this);
-            listaPatrullas.add(nuevaPatrulla);
-            nuevaPatrulla.start();
+                    // Consumimos recursos
+                    depositoCristal.robarRecurso(150);
+                    depositoMineral.robarRecurso(100);
+                    depositoPlasma.robarRecurso(75);
 
-            log.escribir("Se incorpora una nueva patrulla federal " + idNueva + ".");
+                    // Generamos patrulla
+                    String idNueva = String.format("P%03d", contadorPatrullas++);
+                    PatrullaFederal nuevaPatrulla = new PatrullaFederal(idNueva, planetas, depositos, hangar, zonaRecuperacion, log, this);
+                    listaPatrullas.add(nuevaPatrulla);
+                    nuevaPatrulla.start();
+
+                    log.escribir("Se incorpora una nueva patrulla federal " + idNueva + ".");
+                }
+            } finally {
+                cerrojoRefuerzos.unlock(); // ¡Siempre soltar en el finally!
+            }
         }
     }
+
+    
 
     // --- BUCLE DE GENERACIÓN DE SAQUEADORES ---
     @Override
