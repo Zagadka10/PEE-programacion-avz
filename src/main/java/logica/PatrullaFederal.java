@@ -22,7 +22,7 @@ public class PatrullaFederal extends Thread{
     private final Random random = new Random();
 
     // Bandera para saber si el saqueador nos ha ganado el combate
-    private volatile boolean derrotada = false;
+    private boolean derrotada = false;
 
     public PatrullaFederal(String id, Zona[] planetas, Deposito[] depositos, Zona hangar, Zona zonaRecuperacion, FederacionLog log, GestorEventos gestor) {
         this.id = id;
@@ -39,14 +39,14 @@ public class PatrullaFederal extends Thread{
     }
 
     // Método que invocará el Saqueador si gana el combate (50% probabilidad)
-    public void serDerrotada() {
+    public synchronized void serDerrotada() {
         this.derrotada = true;
     }
-    
-    public boolean isDerrotada() {
+
+    public synchronized boolean isDerrotada() {
         return derrotada;
     }
-
+    
     private void dormirConPausa(long milisegundos) throws InterruptedException {
         long iteraciones = milisegundos / 500;
         for (int i = 0; i < iteraciones; i++) {

@@ -30,7 +30,7 @@ public class DelegadoComercial extends Thread {
     private final Random random = new Random();
 
     // Bandera para saber si fue expulsado por un saqueador
-    private volatile boolean expulsado = false;
+    private boolean expulsado = false;
 
     public DelegadoComercial(int idNumerico, Zona centro, Zona[] pCristal, Zona[] pMineral, Zona pPlasma,
             Deposito dCristal, Deposito dMineral, Deposito dPlasma, Zona zRecuperacion,
@@ -54,10 +54,26 @@ public class DelegadoComercial extends Thread {
     }
 
     // Método que llamará el Saqueador para expulsarlo del planeta
-    public void serExpulsado() {
+    public synchronized void serExpulsado() {
         this.expulsado = true;
     }
 
+    public synchronized boolean isExpulsado() {
+        return expulsado;
+    }
+    
+    public synchronized void resetearExpulsion() {
+        this.expulsado = false;
+    }
+
+    private void dormirConPausa(long ms) throws InterruptedException {
+        long iteraciones = ms / 500;
+        for (int i = 0; i < iteraciones; i++) {
+            gestor.comprobarPausa();
+            Thread.sleep(500);
+        }
+    }
+    
     @Override
     public void run() {
         try {
@@ -66,26 +82,39 @@ public class DelegadoComercial extends Thread {
                 gestor.comprobarPausa();
                 centroCoordinacion.entrarDelegado(this);
                 log.escribir(id + " preparando solicitud en el Centro de Coordinación.");
-                Thread.sleep(2000 + random.nextInt(2001)); // 2 a 4 segundos
+                dormirConPausa(2000 + random.nextInt(2001)); // 2 a 4 segundos
                 centroCoordinacion.salirDelegado(this);
 
                 // SELECCIÓN DE RECURSO Y PLANETA
-                int seleccion = random.nextInt(5); // Número del 0 al 4
-                Zona planetaDestino;
-                Deposito depositoDestino;
-                
-                if (seleccion < 2) { 
-                    // Sale 0 o 1 (40% de viajes para Cristal)
-                    planetaDestino = planetasCristal[seleccion];
-                    depositoDestino = depositoCristal;
-                } else if (seleccion < 4) { 
-                    // Sale 2 o 3 (40% de viajes para Mineral)
-                    planetaDestino = planetasMineral[seleccion - 2];
-                    depositoDestino = depositoMineral;
-                } else { 
-                    // Sale 4 (20% de viajes para Plasma)
-                    planetaDestino = planetaPlasma;
-                    depositoDestino = depositoPlasma;
+                // Mejora para que no acapare los delegados un deposito con un limite en la cola de 6.
+                // pequeña ayuda para deposito de plasma.
+                Zona planetaDestino = null;
+                Deposito depositoDestino = null;
+                boolean objetivoEncontrado = false;
+                int limiteCola = 6; 
+
+                while (!objetivoEncontrado) {
+                    int seleccion = random.nextInt(5); 
+                    
+                    if (seleccion < 2) { 
+                        planetaDestino = planetasCristal[seleccion];
+                        depositoDestino = depositoCristal;
+                    } else if (seleccion < 4) { 
+                        planetaDestino = planetasMineral[seleccion - 2];
+                        depositoDestino = depositoMineral;
+                    } else { 
+                        planetaDestino = planetaPlasma;
+                        depositoDestino = depositoPlasma;
+                    }
+
+                    if (planetaDestino.getNumeroDelegadosEnCola() < limiteCola && 
+                        depositoDestino.getNumeroDelegadosEnCola() < limiteCola) {
+                        
+                        objetivoEncontrado = true;
+                    } else {
+                        log.escribir(id + " ve demasiada cola en " + planetaDestino.getId() + ". Sorteando nuevo destino...");
+                        dormirConPausa(500); 
+                    }
                 }
 
                 // VIAJE AL PLANETA Y EXTRACCIÓN
@@ -93,16 +122,16 @@ public class DelegadoComercial extends Thread {
                 planetaDestino.entrarDelegado(this); // Aquí se bloquea si hay 4 delegados o hay ataque
                 log.escribir(id + " comienza extracción en " + planetaDestino.getId() + ".");
 
-                expulsado = false; // Reseteamos el estado antes de extraer
-                Thread.sleep(3000 + random.nextInt(2001)); // 3 a 5 segundos de extracción
+                resetearExpulsion(); // Reseteamos el estado antes de extraer
+                dormirConPausa(3000 + random.nextInt(2001)); // 3 a 5 segundos de extracción
 
                 planetaDestino.salirDelegado(this);
 
                 // ¿FUE ATACADO DURANTE LA EXTRACCIÓN?
-                if (expulsado) {
+                if (isExpulsado()) {
                     log.escribir(id + " huye a la Zona de Recuperación tras el ataque.");
                     zonaRecuperacion.entrarDelegado(this);
-                    Thread.sleep(5000 + random.nextInt(5001)); // 10 a 15 segundos
+                    dormirConPausa(5000 + random.nextInt(5001)); // 10 a 15 segundos
                     zonaRecuperacion.salirDelegado(this);
                     continue; // Vuelve al Centro de Coordinación (inicio del while) sin depositar
                 }
@@ -118,7 +147,7 @@ public class DelegadoComercial extends Thread {
                 depositoDestino.depositarRecurso(cantidadExtraida);
                 log.escribir(id + " depositando " + cantidadExtraida + " uds en " + depositoDestino.getId() + ".");
 
-                Thread.sleep(2000 + random.nextInt(1001)); // 2 a 3 segundos depositando
+                dormirConPausa(2000 + random.nextInt(1001)); // 2 a 3 segundos depositando
 
                 depositoDestino.salirDelegado(this);
 
